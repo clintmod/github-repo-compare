@@ -1,0 +1,109 @@
+#!/usr/bin/env python
+import base64
+import json
+import os
+import urllib2
+
+if not 'GITHUB_REPO_COMPARE_TOKEN' in os.environ:
+	raise ValueError('expected personal github token in environment variable GITHUB_REPO_COMPARE_TOKEN')
+
+if not 'GITHUB_REPO_COMPARE_USERNAME' in os.environ:
+	raise ValueError('expected github user name in environment variable GITHUB_REPO_COMPARE_USERNAME')
+
+username = os.environ['GITHUB_REPO_COMPARE_USERNAME']
+token = os.environ['GITHUB_REPO_COMPARE_TOKEN']
+
+def get_fields():
+	return [
+		{"header": "name", "jsonkey":"full_name", "padding":20},
+		{"header": "stars", "jsonkey":"stargazers_count", "padding":10},
+		{"header": "watchers", "jsonkey":"subscribers_count", "padding":10},
+		{"header": "forks", "jsonkey":"forks", "padding":10},
+		{"header": "issues", "jsonkey":"open_issues", "padding":10}
+	]
+
+def get_field_idx(header):
+	fields = get_fields()
+	for idx, val in enumerate(fields):
+		if(val["header"] == header):
+			return idx
+	return -1
+
+def get_headers():
+	headers = []
+	fields = get_fields()
+	for field in fields:
+		headers.append(field["header"])
+	return headers
+
+def get_json_keys():
+	keys = []
+	fields = get_fields()
+	for field in fields:
+		keys.append(field["jsonkey"])
+	return keys
+
+def get_stats_for_repo(repo, keys):
+	return_value = []
+	url = 'https://api.github.com/repos/' + repo
+	request = get_request(url)
+	try:
+		print 'fetching ' + repo
+		stream = urllib2.urlopen(request)
+	except urllib2.HTTPError, e:
+		print e.fp.read()
+		raise e
+	result = json.load(stream)
+	for key in keys:
+		return_value.append(result[key])
+	return return_value
+
+def get_request(url):
+	request = urllib2.Request(url)
+	base64string = base64.b64encode('%s:%s' % (username, token))
+	request.add_header("Authorization", "Basic %s" % base64string)   
+	return request
+
+def get_stats(repos):
+	stats = []
+	keys = get_json_keys()
+	for repo in repos:
+		stats.append(get_stats_for_repo(repo.strip(), keys))
+	return stats
+
+def print_stats(stats, sort_field_idx=-1):
+	print ''
+	if sort_field_idx > -1:
+		stats.sort(key=lambda x: x[sort_field_idx], reverse=True)
+	stats = add_headers(stats)
+	pattern = ""
+	fields = get_fields()
+	for idx, field in enumerate(fields):
+		pattern += '{'+str(idx)+':'+str(field["padding"])+'} '
+	report = ""
+	for row in stats:
+		report += pattern.format(*row) + '\n'
+	with open("stats.txt", "w") as stats_file:
+		stats_file.write(report)
+	print report
+
+def add_headers(stats):
+	headers = get_headers()
+	header_seperators = []
+	fields = get_fields()
+	for field in fields:
+		header_seperators.append('-' * (field["padding"]))
+	return [headers] + [header_seperators] + stats
+
+def main():
+	repos_file = open("repos.txt", "r")
+	repos = repos_file.readlines()
+	repos_file.close()
+	stats = get_stats(repos)
+	print_stats(stats, get_field_idx('stars'))
+
+if __name__ == "__main__":
+	main()
+	#stats = [['akamensky/argparse', 5, 0, 0], ['cosiner/argv', 3, 1, 0], ['mkideal/cli', 320, 15, 24], ['teris-io/cli', 18, 1, 0], ['tcnksm/gcli', 765, 26, 65], ['tucnak/climax', 126, 7, 11], ['spf13/cobra', 5835, 159, 485], ['posener/complete', 389, 11, 17], ['docopt/docopt.go', 873, 32, 70], ['odeke-em/drive', 3714, 188, 293], ['codingconcepts/env', 9, 1, 1], ['cosiner/flag', 72, 4, 2], ['alexflint/go-arg', 450, 15, 21], ['jessevdk/go-flags', 925, 25, 122], ['alecthomas/kingpin', 1603, 38, 113], ['peterh/liner', 411, 19, 65], ['mitchellh/cli', 704, 22, 56], ['jawher/mow.cli', 470, 20, 33], ['spf13/pflag', 284, 17, 98], ['chzyer/readline', 1027, 34, 89], ['octago/sflags', 44, 5, 3], ['ukautz/clif', 79, 2, 9], ['urfave/cli', 7016, 198, 636], ['dixonwille/wlog', 22, 0, 2], ['dixonwille/wmenu', 37, 0, 4]]
+	#print_stats(stats, get_field_idx('stars'))
+
