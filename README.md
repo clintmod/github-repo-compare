@@ -7,8 +7,8 @@ It also writes the report to a file called stats.txt
 
 ## Setup
 
-- get a github personal token
-- setup the environment variables
+- get a [github personal token](https://github.com/settings/tokens/)
+- setup the environment variables (nix example below... on win use `set` instead)
 
 ```bash
 export GITHUB_REPO_COMPARE_TOKEN=[YOUR PERSONAL GITHUB TOKEN]
@@ -25,6 +25,8 @@ export GITHUB_REPO_COMPARE_USERNAME=[YOUR GITHUB USERNAME]
 - cd to the cloned git directory and run: `./github-repo-compare`
 
 ## Example report (generated 12/07/2017)
+
+I was trying to decide which command line argument parser library to use for a golang command line tool and I found a [list on awesome-go](https://github.com/avelino/awesome-go#command-line). I wasn't sure which one to choose so I wrote this utility.
 
 ```bash
 name                 stars      watchers   forks      issues     
