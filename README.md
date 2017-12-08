@@ -1,7 +1,9 @@
 # github-repo-compare
 
-A command line tool you can use to compare a list of git repos by stars, watchers, forks, issues, created date, last commit date to master.
-You can use this tool to help you decide which library to use in your project based on its popularity.
+A command line tool you can use to compare a list of git repos by stars,
+watchers, forks, issues, created date, last commit date to master.
+You can use this tool to help you decide which library to use in
+your project based on its popularity.
 It outputs the list on the command line sorted by stars.
 It also writes the report to a file called stats.txt
 
@@ -18,7 +20,7 @@ export GITHUB_REPO_COMPARE_USERNAME=[YOUR GITHUB USERNAME]
 
 - clone this git repository to your local machine
 - cd to the newly cloned repo
-- replace the contents of repos.txt with the list of repositories you'd like to compare
+- replace the contents of `repos.txt` with the list of repositories you'd like to compare
 
 ## Usage
 
@@ -26,10 +28,12 @@ export GITHUB_REPO_COMPARE_USERNAME=[YOUR GITHUB USERNAME]
 
 ## Example report (generated 12/07/2017)
 
-I was trying to decide which command line argument parser library to use for a golang command line tool and I found a [list on awesome-go](https://github.com/avelino/awesome-go#command-line). I wasn't sure which one to choose so I wrote this utility.
+I was trying to decide which command line argument parser library to use for a golang command line tool.
+I found a [list on awesome-go](https://github.com/avelino/awesome-go#command-line). 
+I wasn't sure which one to choose so I wrote this utility.
 
 ```bash
-name                           stars      watchers   forks      issues     created               last commit           
+name                           stars      watchers   forks      issues     created               last commit (master)  
 ------------------------------ ---------- ---------- ---------- ---------- --------------------- --------------------- 
 urfave/cli                           7018        198        635         81 2013-07-13T19:32:06Z  2017-12-03T21:42:37Z  
 spf13/cobra                          5846        160        487         75 2013-09-03T20:40:26Z  2017-12-07T07:49:35Z  

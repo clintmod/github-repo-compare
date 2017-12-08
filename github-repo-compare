@@ -25,7 +25,7 @@ def get_fields():
         {"header": "forks", "jsonkey": "forks", "padding": 10},
         {"header": "issues", "jsonkey": "open_issues", "padding": 10},
         {"header": "created", "jsonkey": "created_at", "padding": 21},
-        {"header": "last commit", "jsonkey": "created_at", "padding": 21}
+        {"header": "last commit (master)", "jsonkey": "created_at", "padding": 21}
     ]
 
 
