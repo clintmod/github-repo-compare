@@ -3,6 +3,7 @@ import base64
 import json
 import os
 import urllib2
+from multiprocessing.pool import ThreadPool
 
 if not 'GITHUB_REPO_COMPARE_TOKEN' in os.environ:
     raise ValueError('expected personal github token in environment variable GITHUB_REPO_COMPARE_TOKEN')
@@ -20,8 +21,7 @@ def get_fields():
         {"header": "watchers", "jsonkey":"subscribers_count", "padding":10},
         {"header": "forks", "jsonkey":"forks", "padding":10},
         {"header": "issues", "jsonkey":"open_issues", "padding":10},
-        {"header": "created", "jsonkey":"created_at", "padding":25},
-        {"header": "updated", "jsonkey":"updated_at", "padding":25}
+        {"header": "created", "jsonkey":"created_at", "padding":25}
     ]
 
 def get_field_idx(header):
@@ -45,20 +45,20 @@ def get_json_keys():
         keys.append(field["jsonkey"])
     return keys
 
-def get_stats_for_repo(repo, keys):
+def get_stats_for_repo(repo):
+    repo = repo.strip()
+    keys = get_json_keys()
     return_value = []
     url = 'https://api.github.com/repos/' + repo
     request = get_request(url)
     try:
-        print 'fetching ' + repo
         stream = urllib2.urlopen(request)
+        result = json.load(stream)
+        for key in keys:
+            return_value.append(result[key])
+        return url, return_value, None
     except urllib2.HTTPError, e:
-        print e.fp.read()
-        raise e
-    result = json.load(stream)
-    for key in keys:
-        return_value.append(result[key])
-    return return_value
+        return url, None, e.fp.read()
 
 def get_request(url):
     request = urllib2.Request(url)
@@ -68,9 +68,14 @@ def get_request(url):
 
 def get_stats(repos):
     stats = []
-    keys = get_json_keys()
     for repo in repos:
-        stats.append(get_stats_for_repo(repo.strip(), keys))
+        print 'fetching ' + repo.strip()
+    results = ThreadPool(len(repos)).imap_unordered(get_stats_for_repo, repos)
+    for url, result, error in results:
+        if error is None:
+            stats.append(result)
+        else:
+            print "error fetching %r: %s" % (url, error)
     return stats
 
 def print_stats(stats, sort_field_idx=-1):
