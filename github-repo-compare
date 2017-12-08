@@ -6,23 +6,28 @@ import urllib2
 from multiprocessing.pool import ThreadPool
 
 if not 'GITHUB_REPO_COMPARE_TOKEN' in os.environ:
-    raise ValueError('expected personal github token in environment variable GITHUB_REPO_COMPARE_TOKEN')
+    raise ValueError(
+        'expected personal github token in environment variable GITHUB_REPO_COMPARE_TOKEN')
 
 if not 'GITHUB_REPO_COMPARE_USERNAME' in os.environ:
-    raise ValueError('expected github user name in environment variable GITHUB_REPO_COMPARE_USERNAME')
+    raise ValueError(
+        'expected github user name in environment variable GITHUB_REPO_COMPARE_USERNAME')
 
 username = os.environ['GITHUB_REPO_COMPARE_USERNAME']
 token = os.environ['GITHUB_REPO_COMPARE_TOKEN']
 
+
 def get_fields():
     return [
-        {"header": "name", "jsonkey":"full_name", "padding":30},
-        {"header": "stars", "jsonkey":"stargazers_count", "padding":10},
-        {"header": "watchers", "jsonkey":"subscribers_count", "padding":10},
-        {"header": "forks", "jsonkey":"forks", "padding":10},
-        {"header": "issues", "jsonkey":"open_issues", "padding":10},
-        {"header": "created", "jsonkey":"created_at", "padding":25}
+        {"header": "name", "jsonkey": "full_name", "padding": 30},
+        {"header": "stars", "jsonkey": "stargazers_count", "padding": 10},
+        {"header": "watchers", "jsonkey": "subscribers_count", "padding": 10},
+        {"header": "forks", "jsonkey": "forks", "padding": 10},
+        {"header": "issues", "jsonkey": "open_issues", "padding": 10},
+        {"header": "created", "jsonkey": "created_at", "padding": 21},
+        {"header": "last commit", "jsonkey": "created_at", "padding": 21}
     ]
+
 
 def get_field_idx(header):
     fields = get_fields()
@@ -31,12 +36,14 @@ def get_field_idx(header):
             return idx
     return -1
 
+
 def get_headers():
     headers = []
     fields = get_fields()
     for field in fields:
         headers.append(field["header"])
     return headers
+
 
 def get_json_keys():
     keys = []
@@ -45,20 +52,33 @@ def get_json_keys():
         keys.append(field["jsonkey"])
     return keys
 
+
 def get_stats_for_repo(repo):
+    return_val = ()
     repo = repo.strip()
     keys = get_json_keys()
-    return_value = []
+    return_list = []
     url = 'https://api.github.com/repos/' + repo
     request = get_request(url)
     try:
         stream = urllib2.urlopen(request)
         result = json.load(stream)
         for key in keys:
-            return_value.append(result[key])
-        return url, return_value, None
+            return_list.append(result[key])
+        return_val = url, return_list, None
     except urllib2.HTTPError, e:
         return url, None, e.fp.read()
+    # overwrite the late item with the latest commit date
+    try:
+        url += "/branches/master"
+        request = get_request(url)
+        stream = urllib2.urlopen(request)
+        result = json.load(stream)
+        return_list[-1] = result['commit']['commit']['author']['date']
+    except urllib2.HTTPError, e:
+        return url, None, e.fp.read()
+    return return_val
+
 
 def get_request(url):
     request = urllib2.Request(url)
@@ -66,10 +86,11 @@ def get_request(url):
     request.add_header("Authorization", "Basic %s" % base64string)
     return request
 
+
 def get_stats(repos):
     stats = []
     for repo in repos:
-        print 'fetching ' + repo.strip()
+        print 'fetching stats for ' + repo.strip()
     results = ThreadPool(len(repos)).imap_unordered(get_stats_for_repo, repos)
     for url, result, error in results:
         if error is None:
@@ -77,6 +98,7 @@ def get_stats(repos):
         else:
             print "error fetching %r: %s" % (url, error)
     return stats
+
 
 def print_stats(stats, sort_field_idx=-1):
     print ''
@@ -86,13 +108,14 @@ def print_stats(stats, sort_field_idx=-1):
     pattern = ""
     fields = get_fields()
     for idx, field in enumerate(fields):
-        pattern += '{'+str(idx)+':'+str(field["padding"])+'} '
+        pattern += '{' + str(idx) + ':' + str(field["padding"]) + '} '
     report = ""
     for row in stats:
         report += pattern.format(*row) + '\n'
     with open("stats.txt", "w") as stats_file:
         stats_file.write(report)
     print report
+
 
 def add_headers(stats):
     headers = get_headers()
@@ -102,12 +125,14 @@ def add_headers(stats):
         header_seperators.append('-' * (field["padding"]))
     return [headers] + [header_seperators] + stats
 
+
 def main():
     repos_file = open("repos.txt", "r")
     repos = repos_file.readlines()
     repos_file.close()
     stats = get_stats(repos)
     print_stats(stats, get_field_idx('stars'))
+
 
 if __name__ == "__main__":
     main()
