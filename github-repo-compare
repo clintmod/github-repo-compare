@@ -15,11 +15,13 @@ token = os.environ['GITHUB_REPO_COMPARE_TOKEN']
 
 def get_fields():
 	return [
-		{"header": "name", "jsonkey":"full_name", "padding":20},
+		{"header": "name", "jsonkey":"full_name", "padding":30},
 		{"header": "stars", "jsonkey":"stargazers_count", "padding":10},
 		{"header": "watchers", "jsonkey":"subscribers_count", "padding":10},
 		{"header": "forks", "jsonkey":"forks", "padding":10},
-		{"header": "issues", "jsonkey":"open_issues", "padding":10}
+		{"header": "issues", "jsonkey":"open_issues", "padding":10},
+		{"header": "created", "jsonkey":"created_at", "padding":25},
+		{"header": "updated", "jsonkey":"updated_at", "padding":25}
 	]
 
 def get_field_idx(header):
