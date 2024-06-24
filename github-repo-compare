@@ -1,20 +1,22 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+
 import base64
 import json
 import os
-import urllib2
+import urllib.error
+import urllib.request
 from multiprocessing.pool import ThreadPool
 
-if not 'GITHUB_REPO_COMPARE_TOKEN' in os.environ:
+if 'GITHUB_TOKEN' not in os.environ:
     raise ValueError(
-        'expected personal github token in environment variable GITHUB_REPO_COMPARE_TOKEN')
+        'expected personal github token in environment variable GITHUB_TOKEN')
 
-if not 'GITHUB_REPO_COMPARE_USERNAME' in os.environ:
+if 'GITHUB_USERNAME' not in os.environ:
     raise ValueError(
-        'expected github user name in environment variable GITHUB_REPO_COMPARE_USERNAME')
+        'expected github user name in environment variable GITHUB_USERNAME')
 
-username = os.environ['GITHUB_REPO_COMPARE_USERNAME']
-token = os.environ['GITHUB_REPO_COMPARE_TOKEN']
+username = os.environ['GITHUB_USERNAME']
+token = os.environ['GITHUB_TOKEN']
 
 
 def get_fields():
@@ -61,28 +63,28 @@ def get_stats_for_repo(repo):
     url = 'https://api.github.com/repos/' + repo
     request = get_request(url)
     try:
-        stream = urllib2.urlopen(request)
+        stream = urllib.request.urlopen(request)
         result = json.load(stream)
         for key in keys:
             return_list.append(result[key])
         return_val = url, return_list, None
-    except urllib2.HTTPError, e:
+    except urllib.error.HTTPError as e:
         return url, None, e.fp.read()
     # overwrite the late item with the latest commit date
     try:
         url += "/branches/master"
         request = get_request(url)
-        stream = urllib2.urlopen(request)
+        stream = urllib.request.urlopen(request)
         result = json.load(stream)
         return_list[-1] = result['commit']['commit']['author']['date']
-    except urllib2.HTTPError, e:
+    except urllib.error.HTTPError as e:
         return url, None, e.fp.read()
     return return_val
 
 
 def get_request(url):
-    request = urllib2.Request(url)
-    base64string = base64.b64encode('%s:%s' % (username, token))
+    request = urllib.request.Request(url)
+    base64string = base64.b64encode(('%s:%s' % (username, token)).encode())
     request.add_header("Authorization", "Basic %s" % base64string)
     return request
 
@@ -90,18 +92,18 @@ def get_request(url):
 def get_stats(repos):
     stats = []
     for repo in repos:
-        print 'fetching stats for ' + repo.strip()
+        print('fetching stats for ' + repo.strip())
     results = ThreadPool(len(repos)).imap_unordered(get_stats_for_repo, repos)
     for url, result, error in results:
         if error is None:
             stats.append(result)
         else:
-            print "error fetching %r: %s" % (url, error)
+            print("error fetching %r: %s" % (url, error))
     return stats
 
 
 def print_stats(stats, sort_field_idx=-1):
-    print ''
+    print('')
     if sort_field_idx > -1:
         stats.sort(key=lambda x: x[sort_field_idx], reverse=True)
     stats = add_headers(stats)
@@ -114,7 +116,7 @@ def print_stats(stats, sort_field_idx=-1):
         report += pattern.format(*row) + '\n'
     with open("stats.txt", "w") as stats_file:
         stats_file.write(report)
-    print report
+    print(report)
 
 
 def add_headers(stats):
